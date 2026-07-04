@@ -36,7 +36,7 @@ function ProductPanelCard({ product, delayMs = 0 }: { product: AiChatProduct; de
   return (
     <Link
       href={`/browse/${product.id}`}
-      style={{ animationDelay: `${delayMs}ms` }}
+      style={{ animationDelay: `${delayMs}ms`, animationDuration: '550ms' }}
       className="group block bg-card border border-border rounded-xl overflow-hidden hover:shadow-md hover:border-accent transition-all animate-slide-up [animation-fill-mode:backwards]"
     >
       <div className="aspect-square bg-surface-alt overflow-hidden">
@@ -118,7 +118,7 @@ export default function AiAssistantPage() {
   // once the closing transition has finished.
   const [panelMounted, setPanelMounted] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
-  const PANEL_TRANSITION_MS = 350;
+  const PANEL_TRANSITION_MS = 600;
 
   useEffect(() => {
     if (showProductPanel) {
@@ -202,7 +202,7 @@ export default function AiAssistantPage() {
             in and out instead of popping, whichever way `showProductPanel` flips. */}
         {panelMounted && (
           <aside
-            className={`shrink-0 border-b md:border-b-0 md:border-r border-border bg-card overflow-hidden transition-all ease-out ${
+            className={`shrink-0 border-b md:border-b-0 md:border-r border-border bg-card overflow-hidden transition-all ease-base ${
               panelOpen
                 ? 'opacity-100 max-h-[42vh] md:max-h-none md:w-[340px] lg:w-[380px]'
                 : 'opacity-0 max-h-0 md:max-h-none md:w-0'
@@ -216,7 +216,7 @@ export default function AiAssistantPage() {
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-1 gap-3">
                 {products.length > 0
-                  ? products.map((p, i) => <ProductPanelCard key={p.id} product={p} delayMs={i * 60} />)
+                  ? products.map((p, i) => <ProductPanelCard key={p.id} product={p} delayMs={i * 90} />)
                   : Array.from({ length: 2 }).map((_, i) => <ProductSkeletonCard key={i} />)}
               </div>
             </div>
