@@ -1,0 +1,37 @@
+// This is NOT a full application schema — it documents only the two things
+// the AI assistant module touches in Prisma:
+//
+//   1. `AiChatUsage` — new table this module owns outright. Add it verbatim
+//      to your schema.prisma and run `prisma migrate dev`.
+//
+//   2. `Product` — shown here as the MINIMAL field subset ai-assistant.service.ts
+//      reads (via `prisma.product.findMany`/`groupBy`). Your real Product model
+//      almost certainly has more fields (stock, seller ids, timestamps, etc.) —
+//      that's fine, this module only ever selects the fields below. Adjust the
+//      `select: {...}` in ai-assistant.service.ts if your field names differ.
+
+model AiChatUsage {
+  id          String   @id @default(uuid()) @db.Uuid
+  subject_key String   // logged-in user id, or a guest client-generated UUID
+  usage_date  String   // "YYYY-MM-DD" — one row per subject per day
+  count       Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@unique([subject_key, usage_date], name: "subject_key_usage_date")
+  @@map("ai_chat_usage")
+}
+
+// --- Reference only: the Product field subset ai-assistant.service.ts reads ---
+// model Product {
+//   id             String   @id
+//   title          String
+//   category       String
+//   price          Float
+//   images         String[]
+//   sq_badge_label String?
+//   is_active      Boolean
+//   sq_status      String
+//   sq_level       Int?
+//   created_at     DateTime
+// }
