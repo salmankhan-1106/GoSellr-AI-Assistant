@@ -32,11 +32,12 @@ function AssistantAvatar() {
   );
 }
 
-function ProductPanelCard({ product }: { product: AiChatProduct }) {
+function ProductPanelCard({ product, delayMs = 0 }: { product: AiChatProduct; delayMs?: number }) {
   return (
     <Link
       href={`/browse/${product.id}`}
-      className="group block bg-card border border-border rounded-xl overflow-hidden hover:shadow-md hover:border-accent transition-all"
+      style={{ animationDelay: `${delayMs}ms` }}
+      className="group block bg-card border border-border rounded-xl overflow-hidden hover:shadow-md hover:border-accent transition-all animate-slide-up [animation-fill-mode:backwards]"
     >
       <div className="aspect-square bg-surface-alt overflow-hidden">
         {product.image ? (
@@ -108,6 +109,28 @@ export default function AiAssistantPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, isLoading]);
 
+  const showProductPanel = products.length > 0 || isLoading;
+
+  // Two-phase mount so the panel animates both in AND out, instead of
+  // popping in/out instantly when `showProductPanel` flips. Mounting adds
+  // the node in its "closed" state, then flips to "open" a frame later so
+  // the transition actually plays; closing reverses that and only unmounts
+  // once the closing transition has finished.
+  const [panelMounted, setPanelMounted] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const PANEL_TRANSITION_MS = 350;
+
+  useEffect(() => {
+    if (showProductPanel) {
+      setPanelMounted(true);
+      const raf = requestAnimationFrame(() => setPanelOpen(true));
+      return () => cancelAnimationFrame(raf);
+    }
+    setPanelOpen(false);
+    const timeout = setTimeout(() => setPanelMounted(false), PANEL_TRANSITION_MS);
+    return () => clearTimeout(timeout);
+  }, [showProductPanel]);
+
   if (!isHydrated || !isAuthenticated) return null;
 
   const send = async (text: string) => {
@@ -145,8 +168,6 @@ export default function AiAssistantPage() {
     void send(draft);
   };
 
-  const showProductPanel = products.length > 0 || isLoading;
-
   return (
     <div className="h-screen flex flex-col bg-surface-alt">
       {/* Header */}
@@ -176,17 +197,26 @@ export default function AiAssistantPage() {
       </header>
 
       <div className="flex-1 min-h-0 flex flex-col md:flex-row">
-        {/* Left: related-products panel — only takes up space when there's something (or something loading) to show */}
-        {showProductPanel && (
-          <aside className="md:w-[340px] lg:w-[380px] shrink-0 max-h-[42vh] md:max-h-none border-b md:border-b-0 md:border-r border-border bg-card overflow-y-auto">
-            <div className="p-4">
+        {/* Left: related-products panel — only takes up space when there's something (or something loading) to show.
+            Mounted/unmounted with a two-phase state (see panelMounted/panelOpen above) so it slides + fades both
+            in and out instead of popping, whichever way `showProductPanel` flips. */}
+        {panelMounted && (
+          <aside
+            className={`shrink-0 border-b md:border-b-0 md:border-r border-border bg-card overflow-hidden transition-all ease-out ${
+              panelOpen
+                ? 'opacity-100 max-h-[42vh] md:max-h-none md:w-[340px] lg:w-[380px]'
+                : 'opacity-0 max-h-0 md:max-h-none md:w-0'
+            }`}
+            style={{ transitionDuration: `${PANEL_TRANSITION_MS}ms` }}
+          >
+            <div className="w-full md:w-[340px] lg:w-[380px] h-full overflow-y-auto p-4">
               <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
                 <Package className="w-4 h-4 text-accent" />
                 Related Products
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-1 gap-3">
                 {products.length > 0
-                  ? products.map((p) => <ProductPanelCard key={p.id} product={p} />)
+                  ? products.map((p, i) => <ProductPanelCard key={p.id} product={p} delayMs={i * 60} />)
                   : Array.from({ length: 2 }).map((_, i) => <ProductSkeletonCard key={i} />)}
               </div>
             </div>
